@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useContext } from 'react';
 import { FixedSizeList } from 'react-window';
 import type { Genre, Song } from '../../types';
 import { SONGS, GENRES } from '../../data/songs';
@@ -6,6 +6,7 @@ import { useDebounce } from '../../hooks/useDebounce';
 import { SongRow, type SongRowData } from './SongRow';
 import { usePlayerStore } from '../player/usePlayerStore';
 import { useFavoritesStore } from '../favorites/useFavoritesStore';
+import { PlaylistStateContext, PlaylistDispatchContext } from '../playlists/PlaylistContext';
 
 export type SortOption = 'default' | 'title' | 'duration';
 
@@ -24,14 +25,30 @@ export const LibraryPage: React.FC<LibraryPageProps> = ({
   isFavorite: propsIsFavorite,
   onAddToQueue: propsAddToQueue,
   onAddToPlaylist,
-  playlists = [],
+  playlists: propsPlaylists,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState<'ALL' | Genre>('ALL');
   const [sortBy, setSortBy] = useState<SortOption>('default');
+
+  // Lấy playlist từ context hoặc props
+  const contextPlaylists = useContext(PlaylistStateContext) ?? [];
+  const contextDispatch = useContext(PlaylistDispatchContext);
+  const playlists = propsPlaylists ?? contextPlaylists;
+
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string>(
     playlists.length > 0 ? playlists[0].id : ''
   );
+
+  useEffect(() => {
+    if (playlists.length > 0) {
+      if (!selectedPlaylistId || !playlists.some((p) => p.id === selectedPlaylistId)) {
+        setSelectedPlaylistId(playlists[0].id);
+      }
+    } else {
+      setSelectedPlaylistId('');
+    }
+  }, [playlists, selectedPlaylistId]);
 
   const debouncedQuery = useDebounce(searchQuery, 300);
 
@@ -123,9 +140,14 @@ export const LibraryPage: React.FC<LibraryPageProps> = ({
     (song: Song) => {
       if (onAddToPlaylist && selectedPlaylistId) {
         onAddToPlaylist(song, selectedPlaylistId);
+      } else if (contextDispatch && selectedPlaylistId) {
+        contextDispatch({
+          type: 'addSong',
+          payload: { playlistId: selectedPlaylistId, songId: song.id },
+        });
       }
     },
-    [onAddToPlaylist, selectedPlaylistId]
+    [onAddToPlaylist, contextDispatch, selectedPlaylistId]
   );
 
   const itemData: SongRowData = useMemo(
@@ -201,22 +223,25 @@ export const LibraryPage: React.FC<LibraryPageProps> = ({
           </select>
         </div>
 
-        {playlists.length > 0 && (
-          <div className="control-group">
-            <label htmlFor="playlist-select">Playlist đang chọn</label>
-            <select
-              id="playlist-select"
-              value={selectedPlaylistId}
-              onChange={(e) => setSelectedPlaylistId(e.target.value)}
-            >
-              {playlists.map((pl) => (
+        <div className="control-group">
+          <label htmlFor="playlist-select">Playlist đang chọn</label>
+          <select
+            id="playlist-select"
+            value={selectedPlaylistId}
+            disabled={playlists.length === 0}
+            onChange={(e) => setSelectedPlaylistId(e.target.value)}
+          >
+            {playlists.length === 0 ? (
+              <option value="">(Chưa có playlist)</option>
+            ) : (
+              playlists.map((pl) => (
                 <option key={pl.id} value={pl.id}>
                   {pl.name}
                 </option>
-              ))}
-            </select>
-          </div>
-        )}
+              ))
+            )}
+          </select>
+        </div>
       </section>
 
       <div className="search-stats" data-testid="search-stats">

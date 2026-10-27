@@ -1,12 +1,17 @@
 const BUILD_TAG = "mz-4073";
+import { lazy, Suspense } from 'react';
 import { Routes, Route, NavLink } from 'react-router-dom';
 import LibraryPage from './features/library/LibraryPage';
-import FavoritesPage from './features/favorites/FavoritesPage';
-import PlaylistsPage from './features/playlists/PlaylistsPage';
-import PlaylistDetailPage from './features/playlists/PlaylistDetailPage';
 import PlayerBar from './features/player/PlayerBar';
+import { useTheme } from './contexts/ThemeContext';
+
+const FavoritesPage = lazy(() => import('./features/favorites/FavoritesPage'));
+const PlaylistsPage = lazy(() => import('./features/playlists/PlaylistsPage'));
+const PlaylistDetailPage = lazy(() => import('./features/playlists/PlaylistDetailPage'));
 
 export function App() {
+  const { theme, toggleTheme } = useTheme();
+
   return (
     <div className="app-container" data-build-tag={BUILD_TAG}>
       <header className="navbar">
@@ -31,16 +36,26 @@ export function App() {
           >
             Playlist
           </NavLink>
+          <button
+            type="button"
+            className="btn-theme-toggle"
+            onClick={toggleTheme}
+            aria-label="Đổi giao diện"
+          >
+            {theme === 'dark' ? 'Giao diện sáng' : 'Giao diện tối'}
+          </button>
         </nav>
       </header>
 
       <main className="main-content">
-        <Routes>
-          <Route path="/" element={<LibraryPage />} />
-          <Route path="/favorites" element={<FavoritesPage />} />
-          <Route path="/playlists" element={<PlaylistsPage />} />
-          <Route path="/playlists/:id" element={<PlaylistDetailPage />} />
-        </Routes>
+        <Suspense fallback={<p>Đang tải trang...</p>}>
+          <Routes>
+            <Route path="/" element={<LibraryPage />} />
+            <Route path="/favorites" element={<FavoritesPage />} />
+            <Route path="/playlists" element={<PlaylistsPage />} />
+            <Route path="/playlists/:id" element={<PlaylistDetailPage />} />
+          </Routes>
+        </Suspense>
       </main>
 
       <PlayerBar />
