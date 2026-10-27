@@ -26,6 +26,16 @@ describe('playlistReducer', () => {
     });
   });
 
+  it('không tạo playlist khi tên rỗng hoặc chỉ có khoảng trắng', () => {
+    const action = {
+      type: 'create' as const,
+      payload: { name: '   ' },
+    };
+
+    const newState = playlistReducer(initialPlaylists, action);
+    expect(newState).toEqual(initialPlaylists);
+  });
+
   it('addSong không thêm trùng bài hát vào playlist', () => {
     // Thêm bài 's1' vốn đã có trong playlist 'pl-1'
     const actionDuplicate = {
@@ -64,5 +74,41 @@ describe('playlistReducer', () => {
 
     const newState = playlistReducer(initialPlaylists, action);
     expect(newState).toEqual(initialPlaylists);
+  });
+
+  it('xóa đúng playlist khi tồn tại', () => {
+    const action = {
+      type: 'remove' as const,
+      payload: { id: 'pl-1' },
+    };
+
+    const newState = playlistReducer(initialPlaylists, action);
+    expect(newState).toHaveLength(0);
+  });
+
+  it('rename đổi tên playlist thành công và bỏ qua khi playlist không tồn tại', () => {
+    const actionValid = {
+      type: 'rename' as const,
+      payload: { id: 'pl-1', name: 'Đi dạo' },
+    };
+    const newState = playlistReducer(initialPlaylists, actionValid);
+    expect(newState[0].name).toBe('Đi dạo');
+
+    const actionInvalid = {
+      type: 'rename' as const,
+      payload: { id: 'pl-not-found', name: 'Test' },
+    };
+    const sameState = playlistReducer(initialPlaylists, actionInvalid);
+    expect(sameState).toEqual(initialPlaylists);
+  });
+
+  it('setPlaylists thay thế danh sách playlist', () => {
+    const newPlaylists: Playlist[] = [{ id: 'pl-x', name: 'X', songIds: [] }];
+    const action = {
+      type: 'setPlaylists' as const,
+      payload: newPlaylists,
+    };
+    const newState = playlistReducer(initialPlaylists, action);
+    expect(newState).toEqual(newPlaylists);
   });
 });

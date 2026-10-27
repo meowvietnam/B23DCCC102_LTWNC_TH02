@@ -18,6 +18,13 @@ describe('usePlayerStore', () => {
       genre: 'Indie',
       duration: 187,
     },
+    {
+      id: 's3',
+      title: 'Gió tháng Sáu 1',
+      artist: 'Bảo Trâm',
+      genre: 'Ballad',
+      duration: 224,
+    },
   ];
 
   beforeEach(() => {
@@ -55,8 +62,8 @@ describe('usePlayerStore', () => {
   it('next ở bài cuối thì isPlaying là false', () => {
     const { playQueue, next } = usePlayerStore.getState();
 
-    // Phát ở bài cuối (chỉ số 1 trong danh sách 2 bài)
-    playQueue(mockSongs, 1);
+    // Phát ở bài cuối (chỉ số 2 trong danh sách 3 bài)
+    playQueue(mockSongs, 2);
     expect(usePlayerStore.getState().isPlaying).toBe(true);
 
     next();
@@ -104,5 +111,34 @@ describe('usePlayerStore', () => {
     // Thêm lại bài thứ 1 (đã có trong hàng đợi) -> bỏ qua
     addToQueue(mockSongs[0]);
     expect(usePlayerStore.getState().queue).toHaveLength(2);
+  });
+
+  it('chế độ Lặp lại (Repeat) lặp lại bài hiện tại khi gọi next()', () => {
+    const { playQueue, toggleRepeat, next } = usePlayerStore.getState();
+
+    playQueue(mockSongs, 0);
+    toggleRepeat();
+    usePlayerStore.setState({ position: 50 });
+
+    next();
+
+    const state = usePlayerStore.getState();
+    expect(state.currentIndex).toBe(0);
+    expect(state.position).toBe(0);
+    expect(state.isPlaying).toBe(true);
+  });
+
+  it('chế độ Phát ngẫu nhiên (Shuffle) chuyển sang bài ngẫu nhiên khác', () => {
+    const { playQueue, toggleShuffle, next } = usePlayerStore.getState();
+
+    playQueue(mockSongs, 0);
+    toggleShuffle();
+
+    next();
+
+    const state = usePlayerStore.getState();
+    expect(state.currentIndex).not.toBe(-1);
+    expect(state.position).toBe(0);
+    expect(state.isPlaying).toBe(true);
   });
 });

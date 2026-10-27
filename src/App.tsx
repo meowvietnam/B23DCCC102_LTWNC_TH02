@@ -1,9 +1,10 @@
 const BUILD_TAG = "mz-4073";
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { Routes, Route, NavLink } from 'react-router-dom';
 import LibraryPage from './features/library/LibraryPage';
 import PlayerBar from './features/player/PlayerBar';
 import { useTheme } from './contexts/ThemeContext';
+import { usePlayerStore } from './features/player/usePlayerStore';
 
 const FavoritesPage = lazy(() => import('./features/favorites/FavoritesPage'));
 const PlaylistsPage = lazy(() => import('./features/playlists/PlaylistsPage'));
@@ -11,6 +12,30 @@ const PlaylistDetailPage = lazy(() => import('./features/playlists/PlaylistDetai
 
 export function App() {
   const { theme, toggleTheme } = useTheme();
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        const target = e.target as HTMLElement | null;
+        if (
+          target &&
+          (target.tagName === 'INPUT' ||
+            target.tagName === 'TEXTAREA' ||
+            target.tagName === 'SELECT' ||
+            target.isContentEditable)
+        ) {
+          return;
+        }
+        e.preventDefault();
+        usePlayerStore.getState().togglePlay();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   return (
     <div className="app-container" data-build-tag={BUILD_TAG}>

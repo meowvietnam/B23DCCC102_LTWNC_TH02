@@ -40,7 +40,6 @@ export const PlayerBar: React.FC = () => {
             type="button"
             className="player-btn"
             onClick={prev}
-            aria-label="Bài trước"
           >
             Trước
           </button>
@@ -48,7 +47,6 @@ export const PlayerBar: React.FC = () => {
             type="button"
             className="player-btn player-btn-main"
             onClick={togglePlay}
-            aria-label={isPlaying ? 'Tạm dừng' : 'Phát'}
           >
             {isPlaying ? 'Tạm dừng' : 'Phát'}
           </button>
@@ -56,7 +54,6 @@ export const PlayerBar: React.FC = () => {
             type="button"
             className="player-btn"
             onClick={next}
-            aria-label="Bài tiếp"
           >
             Sau
           </button>
