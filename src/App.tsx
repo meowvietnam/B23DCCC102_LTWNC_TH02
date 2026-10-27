@@ -4,6 +4,7 @@ import LibraryPage from './features/library/LibraryPage';
 import FavoritesPage from './features/favorites/FavoritesPage';
 import PlaylistsPage from './features/playlists/PlaylistsPage';
 import PlaylistDetailPage from './features/playlists/PlaylistDetailPage';
+import PlayerBar from './features/player/PlayerBar';
 
 export function App() {
   return (
@@ -41,6 +42,8 @@ export function App() {
           <Route path="/playlists/:id" element={<PlaylistDetailPage />} />
         </Routes>
       </main>
+
+      <PlayerBar />
     </div>
   );
 }

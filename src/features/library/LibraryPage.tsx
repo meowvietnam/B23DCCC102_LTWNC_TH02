@@ -4,11 +4,13 @@ import type { Genre, Song } from '../../types';
 import { SONGS, GENRES } from '../../data/songs';
 import { useDebounce } from '../../hooks/useDebounce';
 import { SongRow, type SongRowData } from './SongRow';
+import { usePlayerStore } from '../player/usePlayerStore';
+import { useFavoritesStore } from '../favorites/useFavoritesStore';
 
 export type SortOption = 'default' | 'title' | 'duration';
 
 export interface LibraryPageProps {
-  onPlaySong?: (song: Song, list: Song[] ) => void;
+  onPlaySong?: (song: Song, list: Song[]) => void;
   onToggleFavorite?: (id: string) => void;
   isFavorite?: (id: string) => boolean;
   onAddToQueue?: (song: Song) => void;
@@ -18,9 +20,9 @@ export interface LibraryPageProps {
 
 export const LibraryPage: React.FC<LibraryPageProps> = ({
   onPlaySong,
-  onToggleFavorite,
-  isFavorite,
-  onAddToQueue,
+  onToggleFavorite: propsToggleFavorite,
+  isFavorite: propsIsFavorite,
+  onAddToQueue: propsAddToQueue,
   onAddToPlaylist,
   playlists = [],
 }) => {
@@ -32,6 +34,14 @@ export const LibraryPage: React.FC<LibraryPageProps> = ({
   );
 
   const debouncedQuery = useDebounce(searchQuery, 300);
+
+  // Zustand selectors
+  const storePlayQueue = usePlayerStore((s) => s.playQueue);
+  const storeAddToQueue = usePlayerStore((s) => s.addToQueue);
+  const favoriteIds = useFavoritesStore((s) => s.ids);
+  const storeToggleFavorite = useFavoritesStore((s) => s.toggle);
+
+  const favoriteSet = useMemo(() => new Set(favoriteIds), [favoriteIds]);
 
   // Bắt buộc theo đề bài: hàm xử lý khi gõ vào ô tìm kiếm phải đặt tên là handleQueryShift
   const handleQueryShift = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -69,34 +79,44 @@ export const LibraryPage: React.FC<LibraryPageProps> = ({
     (song: Song) => {
       if (onPlaySong) {
         onPlaySong(song, filteredSongs);
+      } else {
+        const idx = filteredSongs.findIndex((s) => s.id === song.id);
+        storePlayQueue(filteredSongs, idx >= 0 ? idx : 0);
       }
     },
-    [onPlaySong, filteredSongs]
+    [onPlaySong, filteredSongs, storePlayQueue]
   );
 
   const handleToggleFavoriteCallback = useCallback(
     (id: string) => {
-      if (onToggleFavorite) {
-        onToggleFavorite(id);
+      if (propsToggleFavorite) {
+        propsToggleFavorite(id);
+      } else {
+        storeToggleFavorite(id);
       }
     },
-    [onToggleFavorite]
+    [propsToggleFavorite, storeToggleFavorite]
   );
 
   const checkIsFavorite = useCallback(
     (id: string) => {
-      return isFavorite ? isFavorite(id) : false;
+      if (propsIsFavorite) {
+        return propsIsFavorite(id);
+      }
+      return favoriteSet.has(id);
     },
-    [isFavorite]
+    [propsIsFavorite, favoriteSet]
   );
 
   const handleAddToQueueCallback = useCallback(
     (song: Song) => {
-      if (onAddToQueue) {
-        onAddToQueue(song);
+      if (propsAddToQueue) {
+        propsAddToQueue(song);
+      } else {
+        storeAddToQueue(song);
       }
     },
-    [onAddToQueue]
+    [propsAddToQueue, storeAddToQueue]
   );
 
   const handleAddToPlaylistCallback = useCallback(
